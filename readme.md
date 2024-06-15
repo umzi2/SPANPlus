@@ -1,6 +1,8 @@
 # SPANPlus
 This repository is not an official modernization of [span](https://github.com/hongyuanyu/SPAN). The main idea of ​​which is to clean the code from unused pieces of code, increase stability by removing rgb_mean and adding a more stable upsampler. Also, the number of spab blocks can now be changed
 
+Training code from [NeoSR](https://github.com/muslll/neosr)
+
 | Name        | Upscaler     | n_blocks |
 |-------------|--------------|----------|
 | spanplus    | Dysample     | 4        |
