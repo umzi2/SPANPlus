@@ -73,10 +73,10 @@ def _make_pair(value):
     return value
 
 
-def conv_layer(in_channels,
-               out_channels,
-               kernel_size,
-               bias=True):
+def conv_layer(in_channels: int,
+               out_channels: int,
+               kernel_size: int,
+               bias: bool = True):
     """
     Re-write convolution layer for adaptive `padding`.
     """
@@ -90,7 +90,10 @@ def conv_layer(in_channels,
                      bias=bias)
 
 
-def activation(act_type, inplace=True, neg_slope=0.05, n_prelu=1):
+def activation(act_type: str,
+               inplace: bool = True,
+               neg_slope: float = 0.05,
+               n_prelu: int = 1):
     """
     Activation functions for ['relu', 'lrelu', 'prelu'].
     Parameters
@@ -145,14 +148,14 @@ def sequential(*args):
 
 def dysample_block(in_channels: int,
                    out_channels: int,
-                   upscale_factor=2):
+                   upscale_factor: int = 2):
     return DySample(in_channels, out_channels, upscale_factor)
 
 
-def pixelshuffle_block(in_channels,
-                       out_channels,
-                       upscale_factor=2,
-                       kernel_size=3):
+def pixelshuffle_block(in_channels: int,
+                       out_channels: int,
+                       upscale_factor: int = 2,
+                       kernel_size: int = 3):
     """
     Upsample features according to `upscale_factor`.
     """
@@ -164,7 +167,13 @@ def pixelshuffle_block(in_channels,
 
 
 class Conv3XC(nn.Module):
-    def __init__(self, c_in, c_out, gain1=1, s=1, bias=True, relu=False):
+    def __init__(self,
+                 c_in: int,
+                 c_out: int,
+                 gain1: int = 1,
+                 s: int = 1,
+                 bias: bool = True,
+                 relu: bool = False):
         super(Conv3XC, self).__init__()
         self.weight_concat = None
         self.bias_concat = None
@@ -235,7 +244,7 @@ class Conv3XC(nn.Module):
 
 class SPAB(nn.Module):
     def __init__(self,
-                 in_channels):
+                 in_channels: int):
         super(SPAB, self).__init__()
 
         self.in_channels = in_channels
@@ -262,7 +271,7 @@ class SPAB(nn.Module):
 
 class SPABEND(nn.Module):
     def __init__(self,
-                 in_channels):
+                 in_channels: int):
         super(SPABEND, self).__init__()
 
         self.in_channels = in_channels
@@ -294,17 +303,17 @@ class spanplus(nn.Module):
     """
 
     def __init__(self,
-                 num_in_ch=3,
-                 num_out_ch=3,
-                 n_blocks=4,
-                 feature_channels=48,
-                 upscale=upscale,
+                 num_in_ch: int = 3,
+                 num_out_ch: int = 3,
+                 n_blocks: int = 4,
+                 feature_channels: int = 48,
+                 upscale: int = upscale,
                  upsampler: str = "lp"  # "lp", "ps"
                  ):
         super(spanplus, self).__init__()
 
         in_channels = num_in_ch
-        out_channels = num_out_ch
+        out_channels = num_out_ch if upsampler == "lp" else num_in_ch
         self.conv_1 = Conv3XC(in_channels, feature_channels, gain1=2, s=1)
         self.block_1 = SPAB(feature_channels)
 
