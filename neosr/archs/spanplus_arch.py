@@ -241,4 +241,4 @@ def spanplus_xl(**kwargs):
 
 @ARCH_REGISTRY.register()
 def spanplus_s(**kwargs):
-    return spanplus(blocks=[2], **kwargs)
+    return spanplus(blocks=[2],feature_channels=32, **kwargs)
