@@ -205,7 +205,8 @@ class spanplus(nn.Module):
         out_channels = num_out_ch if upsampler == "dys" else num_in_ch
         if not isinstance(blocks, list):
             blocks = [int(blocks)]
-
+        if not self.training:
+            drop_rate = 0
         self.conv_1 = Conv3XC(in_channels, feature_channels, gain=2, s=1)
         self.feats = nn.Sequential(
             *[Conv3XC(in_channels, feature_channels, gain=2, s=1)]
