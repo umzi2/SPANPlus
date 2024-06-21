@@ -163,7 +163,7 @@ class SPAB(nn.Module):
 
 
 class SPABS(nn.Module):
-    def __init__(self, feature_channels: int, n_blocks: int = 4):
+    def __init__(self, feature_channels: int, n_blocks: int = 4, drop: float = 0.0):
         super(SPABS, self).__init__()
         self.block_1 = SPAB(feature_channels)
 
@@ -174,6 +174,7 @@ class SPABS(nn.Module):
         self.block_end = SPAB(feature_channels, True)
         self.conv_2 = Conv3XC(feature_channels, feature_channels, gain=2, s=1)
         self.conv_cat = nn.Conv2d(feature_channels * 4, feature_channels, kernel_size=1, bias=True)
+        self.dropout = nn.Dropout2d(drop)
         normal_init(self.conv_cat, std=0.02)
 
     def forward(self, x):
@@ -181,7 +182,7 @@ class SPABS(nn.Module):
         out_x = self.block_n(out_b1)
         out_end, out_x_2 = self.block_end(out_x)
         out_end = self.conv_2(out_end)
-        return self.conv_cat(torch.cat([x, out_end, out_b1, out_x_2], 1))
+        return self.dropout(self.conv_cat(torch.cat([x, out_end, out_b1, out_x_2], 1)))
 
 
 @ARCH_REGISTRY.register()
@@ -210,10 +211,10 @@ class spanplus(nn.Module):
         self.feats = nn.Sequential(
             *[Conv3XC(in_channels, feature_channels, gain=2, s=1)]
              + [
-                 SPABS(feature_channels, n_blocks)
+                 SPABS(feature_channels, n_blocks, drop_rate)
                  for n_blocks in blocks
              ]
-             + [nn.Dropout2d(drop_rate)])
+        )
         if upsampler == "ps":
             self.upsampler = nn.Sequential(
                 nn.Conv2d(feature_channels,
