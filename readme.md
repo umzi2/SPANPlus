@@ -3,11 +3,12 @@ This repository is not an official modernization of [span](https://github.com/ho
 
 Training code from [NeoSR](https://github.com/muslll/neosr)
 
-| Name        | Upscaler     | blocks    | feature_channels |
-|-------------|--------------|-----------|------------------|
-| spanplus    | Dysample     | [4]       | 48               |
-| spanplus-s  | DySample     | [2]       | 32               |
-| spanplus-xl | DySample     | [4, 4, 4] | 96               |
+| Name        | Upscaler      | blocks    | feature_channels |
+|-------------|---------------|-----------|------------------|
+| spanplus    | Dysample      | [4]       | 48               |
+| spanplus-s  | DySample      | [2]       | 32               |
+| spanplus-xl | DySample      | [4, 4, 4] | 96               |
+| spanplus-st | PixelShuffle  | [4]       | 48               |
 
 ### Detect:
 ```py 
