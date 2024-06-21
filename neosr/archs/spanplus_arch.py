@@ -30,8 +30,8 @@ class DySample(nn.Module):
         self.scope = nn.Conv2d(in_channels, out_channels, 1, bias=False)
         self.register_buffer('init_pos', self._init_pos())
 
-        trunc_normal_(self.sk.weight, std=0.02)
-        trunc_normal_(self.eval_conv.weight, std=0.02)
+        trunc_normal_(self.end_conv.weight, std=0.02)
+        trunc_normal_(self.offset.weight, std=0.02)
         constant_init(self.scope, val=0.)
 
     def _init_pos(self):
@@ -79,6 +79,9 @@ class Conv3XC(nn.Module):
             nn.Conv2d(in_channels=c_out * gain, out_channels=c_out, kernel_size=1, padding=0, bias=bias),
         )
         self.eval_conv = nn.Conv2d(in_channels=c_in, out_channels=c_out, kernel_size=3, padding=1, stride=s, bias=bias)
+
+        trunc_normal_(self.sk.weight, std=0.02)
+        trunc_normal_(self.eval_conv.weight, std=0.02)
 
         if self.training is False:
             self.eval_conv.weight.requires_grad = False
@@ -174,8 +177,8 @@ class SPABS(nn.Module):
         out_b1 = self.block_1(x)
         out_x = self.block_n(out_b1)
         out_end, out_x_2 = self.block_end(out_x)
-        out_end = self.conv_2(out_end)
-        return self.dropout(self.conv_cat(torch.cat([x, out_end, out_b1, out_x_2], 1)))
+        out_end = self.drop(self.conv_2(out_end))
+        return self.conv_cat(torch.cat([x, out_end, out_b1, out_x_2], 1))
 
 
 @ARCH_REGISTRY.register()
