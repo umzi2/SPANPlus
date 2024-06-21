@@ -177,7 +177,7 @@ class SPABS(nn.Module):
         out_b1 = self.block_1(x)
         out_x = self.block_n(out_b1)
         out_end, out_x_2 = self.block_end(out_x)
-        out_end = self.drop(self.conv_2(out_end))
+        out_end = self.dropout(self.conv_2(out_end))
         return self.conv_cat(torch.cat([x, out_end, out_b1, out_x_2], 1))
 
 
