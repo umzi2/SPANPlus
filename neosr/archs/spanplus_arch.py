@@ -9,13 +9,6 @@ from neosr.archs.arch_util import net_opt
 upscale, __ = net_opt()
 
 
-def normal_init(module, mean=0, std=1.0, bias=0):
-    if hasattr(module, 'weight') and module.weight is not None:
-        trunc_normal_(module.weight, mean, std)
-    if hasattr(module, 'bias') and module.bias is not None:
-        constant_(module.bias, bias)
-
-
 def constant_init(module, val, bias=0):
     if hasattr(module, 'weight') and module.weight is not None:
         constant_(module.weight, val)
@@ -37,8 +30,8 @@ class DySample(nn.Module):
         self.scope = nn.Conv2d(in_channels, out_channels, 1, bias=False)
         self.register_buffer('init_pos', self._init_pos())
 
-        normal_init(self.end_conv, std=0.001)
-        normal_init(self.offset, std=0.001)
+        trunc_normal_(self.sk.weight, std=0.02)
+        trunc_normal_(self.eval_conv.weight, std=0.02)
         constant_init(self.scope, val=0.)
 
     def _init_pos(self):
@@ -175,7 +168,7 @@ class SPABS(nn.Module):
         self.conv_2 = Conv3XC(feature_channels, feature_channels, gain=2, s=1)
         self.conv_cat = nn.Conv2d(feature_channels * 4, feature_channels, kernel_size=1, bias=True)
         self.dropout = nn.Dropout2d(drop)
-        normal_init(self.conv_cat, std=0.02)
+        trunc_normal_(self.conv_cat.weight, std=0.02)
 
     def forward(self, x):
         out_b1 = self.block_1(x)
