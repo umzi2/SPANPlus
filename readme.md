@@ -18,8 +18,8 @@ def detect(state):
         get_seq_len(state,f"feats.{n_feat+1}.block_n")
         for n_feat in range(n_feats)
     ]
-    num_in_ch = state["conv_1.sk.weight"].shape[1]
-    feature_channels = state["conv_1.eval_conv.weight"].shape[0]
+    num_in_ch = state["feats.0.eval_conv.weight"].shape[1]
+    feature_channels = state["feats.0.eval_conv.weight"].shape[0]
     if "upsampler.0.weight" in state_keys:
         upsampler = "ps"
         num_out_ch = num_in_ch
