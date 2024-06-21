@@ -207,7 +207,6 @@ class spanplus(nn.Module):
             blocks = [int(blocks)]
         if not self.training:
             drop_rate = 0
-        self.conv_1 = Conv3XC(in_channels, feature_channels, gain=2, s=1)
         self.feats = nn.Sequential(
             *[Conv3XC(in_channels, feature_channels, gain=2, s=1)]
              + [
