@@ -43,7 +43,7 @@ class DySample(nn.Module):
 
     def _init_pos(self):
         h = torch.arange((-self.scale + 1) / 2, (self.scale - 1) / 2 + 1) / self.scale
-        return (torch.stack(torch.meshgrid([h, h])).transpose(1, 2)
+        return (torch.stack(torch.meshgrid([h, h], indexing="ij")).transpose(1, 2)
                 .repeat(1, self.groups, 1).reshape(1, -1, 1, 1))
 
     def forward(self, x):
@@ -52,13 +52,8 @@ class DySample(nn.Module):
         offset = offset.view(B, 2, -1, H, W)
         coords_h = torch.arange(H) + 0.5
         coords_w = torch.arange(W) + 0.5
-        coords = (torch.stack(
-            torch.meshgrid([coords_w, coords_h]))
-                  .transpose(1, 2)
-                  .unsqueeze(1)
-                  .unsqueeze(0).
-                  type(x.dtype)
-                  .to(x.device))
+        coords = torch.stack(torch.meshgrid([coords_w, coords_h], indexing="ij")
+                             ).transpose(1, 2).unsqueeze(1).unsqueeze(0).type(x.dtype).to(x.device)
         normalizer = torch.tensor([W, H], dtype=x.dtype, device=x.device).view(1, 2, 1, 1, 1)
         coords = 2 * (coords + offset) / normalizer - 1
         coords = F.pixel_shuffle(coords.reshape(B, -1, H, W), self.scale).view(
@@ -168,7 +163,7 @@ class SPAB(nn.Module):
 
 
 class SPABS(nn.Module):
-    def __init__(self, feature_channels: int, drop_rate: float, n_blocks: int = 4):
+    def __init__(self, feature_channels: int, n_blocks: int = 4):
         super(SPABS, self).__init__()
         self.block_1 = SPAB(feature_channels)
 
@@ -202,12 +197,12 @@ class spanplus(nn.Module):
                  feature_channels: int = 48,
                  upscale: int = upscale,
                  drop_rate: float = 0.0,
-                 upsampler: str = "lp"  # "lp", "ps"
+                 upsampler: str = "dys"  # "lp", "ps"
                  ):
         super(spanplus, self).__init__()
 
         in_channels = num_in_ch
-        out_channels = num_out_ch if upsampler == "lp" else num_in_ch
+        out_channels = num_out_ch if upsampler == "dys" else num_in_ch
         if not isinstance(blocks, list):
             blocks = [int(blocks)]
 
@@ -215,7 +210,7 @@ class spanplus(nn.Module):
         self.feats = nn.Sequential(
             *[Conv3XC(in_channels, feature_channels, gain=2, s=1)]
              + [
-                 SPABS(feature_channels, drop_rate, n_blocks)
+                 SPABS(feature_channels, n_blocks)
                  for n_blocks in blocks
              ]
              + [nn.Dropout2d(drop_rate)])
@@ -229,6 +224,14 @@ class spanplus(nn.Module):
         else:
             self.upsampler = DySample(feature_channels, out_channels, upscale)
 
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            trunc_normal_(m.weight, std=.02)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+
     def forward(self, x):
         out = self.feats(x)
         return self.upsampler(out)
@@ -241,4 +244,4 @@ def spanplus_xl(**kwargs):
 
 @ARCH_REGISTRY.register()
 def spanplus_s(**kwargs):
-    return spanplus(blocks=[2],feature_channels=32, **kwargs)
+    return spanplus(blocks=[2], feature_channels=32, **kwargs)
