@@ -9,13 +9,6 @@ from neosr.archs.arch_util import net_opt
 upscale, __ = net_opt()
 
 
-def constant_init(module, val, bias=0):
-    if hasattr(module, 'weight') and module.weight is not None:
-        constant_(module.weight, val)
-    if hasattr(module, 'bias') and module.bias is not None:
-        constant_(module.bias, bias)
-
-
 class DySample(nn.Module):
     def __init__(self, in_channels: int, out_ch: int, scale: int = 2, groups: int = 4):
         super().__init__()
@@ -29,10 +22,10 @@ class DySample(nn.Module):
         self.offset = nn.Conv2d(in_channels, out_channels, 1)
         self.scope = nn.Conv2d(in_channels, out_channels, 1, bias=False)
         self.register_buffer('init_pos', self._init_pos())
-
-        trunc_normal_(self.end_conv.weight, std=0.02)
-        trunc_normal_(self.offset.weight, std=0.02)
-        constant_init(self.scope, val=0.)
+        if self.training:
+            trunc_normal_(self.end_conv.weight, std=0.02)
+            trunc_normal_(self.offset.weight, std=0.02)
+            constant_(self.scope.weight, val=0.)
 
     def _init_pos(self):
         h = torch.arange((-self.scale + 1) / 2, (self.scale - 1) / 2 + 1) / self.scale
@@ -40,17 +33,21 @@ class DySample(nn.Module):
                 .repeat(1, self.groups, 1).reshape(1, -1, 1, 1))
 
     def forward(self, x):
-        offset = self.offset(x) * self.scope(x).sigmoid() * 0.5 + self.init_pos
-        B, _, H, W = offset.shape
-        offset = offset.view(B, 2, -1, H, W)
-        coords_h = torch.arange(H) + 0.5
-        coords_w = torch.arange(W) + 0.5
+        with torch.no_grad():
+            offset = self.offset(x) * self.scope(x).sigmoid() * 0.5 + self.init_pos
+            B, _, H, W = offset.shape
+            offset = offset.view(B, 2, -1, H, W)
+            coords_h = torch.arange(H) + 0.5
+            coords_w = torch.arange(W) + 0.5
+
         coords = torch.stack(torch.meshgrid([coords_w, coords_h], indexing="ij")
-                             ).transpose(1, 2).unsqueeze(1).unsqueeze(0).type(x.dtype).to(x.device)
-        normalizer = torch.tensor([W, H], dtype=x.dtype, device=x.device).view(1, 2, 1, 1, 1)
+                             ).transpose(1, 2).unsqueeze(1).unsqueeze(0).type(x.dtype).to(x.device, non_blocking=True)
+        normalizer = torch.tensor([W, H], dtype=x.dtype, device=x.device, pin_memory=True).view(1, 2, 1, 1, 1)
         coords = 2 * (coords + offset) / normalizer - 1
+
         coords = F.pixel_shuffle(coords.reshape(B, -1, H, W), self.scale).view(
             B, 2, -1, self.scale * H, self.scale * W).permute(0, 2, 3, 4, 1).contiguous().flatten(0, 1)
+
         return self.end_conv((F.grid_sample(x.reshape(B * self.groups, -1, H, W),
                                             coords, mode='bilinear',
                                             align_corners=False,
@@ -79,9 +76,9 @@ class Conv3XC(nn.Module):
             nn.Conv2d(in_channels=c_out * gain, out_channels=c_out, kernel_size=1, padding=0, bias=bias),
         )
         self.eval_conv = nn.Conv2d(in_channels=c_in, out_channels=c_out, kernel_size=3, padding=1, stride=s, bias=bias)
-
-        trunc_normal_(self.sk.weight, std=0.02)
-        trunc_normal_(self.eval_conv.weight, std=0.02)
+        if self.training:
+            trunc_normal_(self.sk.weight, std=0.02)
+            trunc_normal_(self.eval_conv.weight, std=0.02)
 
         if self.training is False:
             self.eval_conv.weight.requires_grad = False
@@ -171,7 +168,8 @@ class SPABS(nn.Module):
         self.conv_2 = Conv3XC(feature_channels, feature_channels, gain=2, s=1)
         self.conv_cat = nn.Conv2d(feature_channels * 4, feature_channels, kernel_size=1, bias=True)
         self.dropout = nn.Dropout2d(drop)
-        trunc_normal_(self.conv_cat.weight, std=0.02)
+        if self.training:
+            trunc_normal_(self.conv_cat.weight, std=0.02)
 
     def forward(self, x):
         out_b1 = self.block_1(x)
@@ -220,14 +218,6 @@ class spanplus(nn.Module):
             )
         else:
             self.upsampler = DySample(feature_channels, out_channels, upscale)
-
-        self.apply(self._init_weights)
-
-    def _init_weights(self, m):
-        if isinstance(m, nn.Linear):
-            trunc_normal_(m.weight, std=.02)
-            if isinstance(m, nn.Linear) and m.bias is not None:
-                nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
         out = self.feats(x)
