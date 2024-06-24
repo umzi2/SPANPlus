@@ -4,7 +4,7 @@ from torch import nn
 from torch.nn.init import trunc_normal_, constant_
 
 from neosr.utils.registry import ARCH_REGISTRY
-from neosr.archs.arch_util import net_opt
+from neosr.archs.arch_util import net_opt,DySample
 
 upscale, __ = net_opt()
 
