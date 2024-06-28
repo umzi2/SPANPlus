@@ -191,8 +191,8 @@ class spanplus(nn.Module):
 
 
 @ARCH_REGISTRY.register()
-def spanplus_xl(**kwargs):
-    return spanplus(blocks=[4, 4, 4], feature_channels=96, **kwargs)
+def spanplus_sts(**kwargs):
+    return spanplus(blocks=[2], feature_channels=32, upsampler="ps", **kwargs)
 
 
 @ARCH_REGISTRY.register()
