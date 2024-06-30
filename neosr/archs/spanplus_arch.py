@@ -142,7 +142,7 @@ class spanplus(nn.Module):
     def __init__(self,
                  num_in_ch: int = 3,
                  num_out_ch: int = 3,
-                 blocks: int = [4],
+                 blocks: list = [4],
                  feature_channels: int = 48,
                  upscale: int = upscale,
                  drop_rate: float = 0.0,
@@ -173,7 +173,7 @@ class spanplus(nn.Module):
         elif upsampler == "dys":
             self.upsampler = DySample(feature_channels, out_channels, upscale)
         elif upsampler == "conv":
-            if upsampler != 1:
+            if upscale != 1:
                 msg = "conv supports only 1x"
                 raise ValueError(msg)
 
