@@ -7,7 +7,7 @@ Training code from [NeoSR](https://github.com/muslll/neosr)
 |-------------|---------------|-----------|------------------|
 | spanplus    | Dysample      | [4]       | 48               |
 | spanplus-s  | DySample      | [2]       | 32               |
-| spanplus-xl | DySample      | [4, 4, 4] | 96               |
+| spanplus-sts | PixelShuffle      | [2] | 32             |
 | spanplus-st | PixelShuffle  | [4]       | 48               |
 
 ### Detect:
