@@ -26,7 +26,7 @@ def detect(state):
         num_out_ch = num_in_ch
         upscale = int((state["upsampler.0.weight"].shape[0] / num_in_ch) ** 0.5)
     else:
-        upsampler = "lp"
+        upsampler = "dys"
         num_out_ch = state["upsampler.end_conv.weight"].shape[0]
         upscale = int((state["upsampler.offset.weight"].shape[0] // 8) ** 0.5)
     print(num_in_ch,
