@@ -146,7 +146,7 @@ class spanplus(nn.Module):
                  feature_channels: int = 48,
                  upscale: int = upscale,
                  drop_rate: float = 0.0,
-                 upsampler: str = "dys"  # "lp", "ps", "conv"- only 1x
+                 upsampler: str = "dys"  # "lp", "ps"
                  ):
         super(spanplus, self).__init__()
 
@@ -172,18 +172,10 @@ class spanplus(nn.Module):
             )
         elif upsampler == "dys":
             self.upsampler = DySample(feature_channels, out_channels, upscale)
-        elif upsampler == "conv":
-            if upscale != 1:
-                msg = "conv supports only 1x"
-                raise ValueError(msg)
-
-            self.upsampler = nn.Conv2d(feature_channels,
-                                       out_channels,
-                                       3, padding=1)
         else:
             raise NotImplementedError(
                 f'upsampler: {upsampler} not supported, choose one of these options: \
-                ["ps", "dys", "conv"] conv supports only 1x')
+                ["ps", "dys"]')
 
     def forward(self, x):
         out = self.feats(x)
