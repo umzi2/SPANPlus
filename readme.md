@@ -13,7 +13,6 @@ Training code from [NeoSR](https://github.com/muslll/neosr)
 ### Detect:
 ```py 
 def detect(state):
-    state_keys = state.keys()
     n_feats = get_seq_len(state, "feats")-1
     blocks = [
         get_seq_len(state,f"feats.{n_feat+1}.block_n")
@@ -21,7 +20,7 @@ def detect(state):
     ]
     num_in_ch = state["feats.0.eval_conv.weight"].shape[1]
     feature_channels = state["feats.0.eval_conv.weight"].shape[0]
-    if "upsampler.0.weight" in state_keys:
+    if "upsampler.0.weight" in state:
         upsampler = "ps"
         num_out_ch = num_in_ch
         upscale = int((state["upsampler.0.weight"].shape[0] / num_in_ch) ** 0.5)
